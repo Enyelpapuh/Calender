@@ -1,15 +1,21 @@
-"use client"
-
 import { Calendar, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import type { Reminder, ReminderStatus } from "@/lib/types"
+import { cn } from "@/lib/utils"
 
 interface RemindersViewProps {
-  reminders: Record<string, string[]>
+  reminders: Record<string, Reminder[]>
   onDeleteReminder: (date: Date, index: number) => void
+  onUpdateReminderStatus: (date: Date, index: number, status: ReminderStatus) => void
   onDateClick: (date: Date) => void
 }
 
-export function RemindersView({ reminders, onDeleteReminder, onDateClick }: RemindersViewProps) {
+export function RemindersView({
+  reminders,
+  onDeleteReminder,
+  onUpdateReminderStatus,
+  onDateClick,
+}: RemindersViewProps) {
   const sortedDates = Object.keys(reminders)
     .filter((dateKey) => reminders[dateKey].length > 0)
     .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
@@ -56,6 +62,19 @@ export function RemindersView({ reminders, onDeleteReminder, onDateClick }: Remi
     return date < today
   }
 
+  const getStatusBadge = (status: ReminderStatus) => {
+    switch (status) {
+      case "PENDIENTE":
+        return "bg-yellow-500"
+      case "ENVIADO":
+        return "bg-green-500"
+      case "FALLIDO":
+        return "bg-red-500"
+      default:
+        return "bg-gray-500"
+    }
+  }
+
   const totalReminders = sortedDates.reduce((acc, dateKey) => acc + reminders[dateKey].length, 0)
 
   return (
@@ -99,15 +118,31 @@ export function RemindersView({ reminders, onDeleteReminder, onDateClick }: Remi
                 <ul className="space-y-2">
                   {dayReminders.map((reminder, index) => (
                     <li key={index} className="flex items-center justify-between p-3 bg-accent rounded-lg group">
-                      <span className="text-sm text-foreground">{reminder}</span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onDeleteReminder(dateInfo.date, index)}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      <div className="flex items-center gap-3">
+                        <span className={cn("w-3 h-3 rounded-full", getStatusBadge(reminder.status))} />
+                        <span className="text-sm text-foreground">{reminder.text}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={reminder.status}
+                          onChange={(e) =>
+                            onUpdateReminderStatus(dateInfo.date, index, e.target.value as ReminderStatus)
+                          }
+                          className="bg-background border border-border rounded-md px-2 py-1 text-xs"
+                        >
+                          <option value="PENDIENTE">Pendiente</option>
+                          <option value="ENVIADO">Enviado</option>
+                          <option value="FALLIDO">Fallido</option>
+                        </select>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onDeleteReminder(dateInfo.date, index)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
                     </li>
                   ))}
                 </ul>

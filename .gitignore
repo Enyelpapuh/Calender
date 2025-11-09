@@ -27,8 +27,6 @@ dist-ssr
 *.py[cod]
 *.pyc
 __pycache__/
-*.pyo
-*.pyd
 
 # SQLite
 db.sqlite3

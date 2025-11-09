@@ -3,12 +3,13 @@
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import type { Reminder } from "@/lib/types"
 
 interface YearViewProps {
   selectedDate: Date
   onDateChange: (date: Date) => void
   onMonthClick: (month: number) => void
-  reminders: Record<string, string[]>
+  reminders: Record<string, Reminder[]>
 }
 
 export function YearView({ selectedDate, onDateChange, onMonthClick, reminders }: YearViewProps) {

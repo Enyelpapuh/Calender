@@ -5,27 +5,49 @@ import { MonthView } from "@/components/Elementos/month-view"
 import { YearView } from "@/components/Elementos/year-view"
 import { DayView } from "@/components/Elementos/day-view"
 import { RemindersView } from "@/components/Elementos/reminders-view"
-import { Menu } from "lucide-react"
+import { Navbar } from "@/components/Elementos/navbar"
 import { useState, useEffect } from "react"
+import { Routes, Route, useNavigate } from "react-router-dom"
+import RegisterPage from "@/components/Elementos/RegisterPage"
+import LoginPage from "@/components/Elementos/LoginPage"
+import type { Reminder, ReminderStatus } from "@/lib/types"
+import { useAuth } from "@/lib/auth"
 
 type ViewOption = "day" | "month" | "year" | "reminders"
 
-export default function Home() {
+export default function App() {
+  // Obtenemos el estado de autenticación
+  const { isAuthenticated } = useAuth(); 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [selectedView, setSelectedView] = useState<ViewOption>("month")
   const [selectedDate, setSelectedDate] = useState(new Date())
-  const [reminders, setReminders] = useState<Record<string, string[]>>({})
+  // El estado de los recordatorios ahora sirve para usuarios invitados y autenticados
+  const [reminders, setReminders] = useState<Record<string, Reminder[]>>({})
+  const navigate = useNavigate()
 
+  const handleViewChange = (view: ViewOption) => {
+    navigate("/")
+    setSelectedView(view)
+  }
+
+  // --- EFECTOS CONDICIONALES ---
+  // Cargar recordatorios desde localStorage SOLO si el usuario está autenticado
   useEffect(() => {
-    const savedReminders = localStorage.getItem("calendar-reminders")
-    if (savedReminders) {
-      setReminders(JSON.parse(savedReminders))
+    if (isAuthenticated) {
+      const savedReminders = localStorage.getItem("calendar-reminders")
+      if (savedReminders) {
+        setReminders(JSON.parse(savedReminders))
+      }
     }
-  }, [])
+    // Si no está autenticado, el estado 'reminders' empieza vacío.
+  }, [isAuthenticated]) // Se ejecuta cuando cambia el estado de autenticación
 
+  // Guardar recordatorios en localStorage SOLO si el usuario está autenticado
   useEffect(() => {
-    localStorage.setItem("calendar-reminders", JSON.stringify(reminders))
-  }, [reminders])
+    if (isAuthenticated) {
+      localStorage.setItem("calendar-reminders", JSON.stringify(reminders))
+    }
+  }, [reminders, isAuthenticated])
 
   const getDateKey = (date: Date) => {
     const year = date.getFullYear()
@@ -34,11 +56,12 @@ export default function Home() {
     return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`
   }
 
-  const handleAddReminder = (date: Date, reminder: string) => {
+  const handleAddReminder = (date: Date, reminderText: string) => {
     const dateKey = getDateKey(date)
+    const newReminder: Reminder = { text: reminderText, status: "PENDIENTE" }
     setReminders((prev) => ({
       ...prev,
-      [dateKey]: [...(prev[dateKey] || []), reminder],
+      [dateKey]: [...(prev[dateKey] || []), newReminder],
     }))
   }
 
@@ -49,6 +72,18 @@ export default function Home() {
       newReminders[dateKey] = newReminders[dateKey].filter((_, i) => i !== index)
       if (newReminders[dateKey].length === 0) {
         delete newReminders[dateKey]
+      }
+      return newReminders
+    })
+  }
+
+  const handleUpdateReminderStatus = (date: Date, index: number, status: ReminderStatus) => {
+    const dateKey = getDateKey(date)
+    setReminders((prev) => {
+      const newReminders = { ...prev }
+      const reminderToUpdate = newReminders[dateKey][index]
+      if (reminderToUpdate) {
+        newReminders[dateKey][index] = { ...reminderToUpdate, status }
       }
       return newReminders
     })
@@ -70,55 +105,70 @@ export default function Home() {
     setSelectedView("day")
   }
 
+
   return (
     <div className="flex min-h-screen">
-      <button
-        onClick={() => setIsSidebarOpen(true)}
-        className="fixed top-4 left-4 z-30 lg:hidden p-2 bg-sidebar border border-border rounded-md shadow-lg hover:bg-sidebar-accent transition-colors"
-        aria-label="Abrir menú"
-      >
-        <Menu className="h-6 w-6 text-sidebar-foreground" />
-      </button>
+      {/* La Navbar y Sidebar ahora se muestran siempre */}
+      <Navbar onMenuClick={() => setIsSidebarOpen(true)} />
 
       <CalendarSidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         selectedView={selectedView}
-        onViewChange={setSelectedView}
+        onViewChange={handleViewChange}
       />
 
-      <main className="flex-1 p-8 pt-20 lg:pt-8 bg-background">
-        {selectedView === "month" && (
-          <MonthView
-            selectedDate={selectedDate}
-            onDateChange={setSelectedDate}
-            onDayClick={handleDayClick}
-            reminders={reminders}
-          />
-        )}
+      <main className="flex-1 p-8 pt-24 bg-background">
+        <Routes>
+          {/* La ruta principal ya no está protegida, es para todos */}
+          <Route
+            path="/"
+            element={
+              <>
+                {selectedView === "month" && (
+                  <MonthView
+                    selectedDate={selectedDate}
+                    onDateChange={setSelectedDate}
+                    onDayClick={handleDayClick}
+                    reminders={reminders}
+                  />
+                )}
 
-        {selectedView === "year" && (
-          <YearView
-            selectedDate={selectedDate}
-            onDateChange={setSelectedDate}
-            onMonthClick={handleMonthClick}
-            reminders={reminders}
-          />
-        )}
+                {selectedView === "year" && (
+                  <YearView
+                    selectedDate={selectedDate}
+                    onDateChange={setSelectedDate}
+                    onMonthClick={handleMonthClick}
+                    reminders={reminders}
+                  />
+                )}
 
-        {selectedView === "day" && (
-          <DayView
-            selectedDate={selectedDate}
-            onDateChange={setSelectedDate}
-            reminders={reminders}
-            onAddReminder={handleAddReminder}
-            onDeleteReminder={handleDeleteReminder}
-          />
-        )}
+                {selectedView === "day" && (
+                  <DayView
+                    selectedDate={selectedDate}
+                    onDateChange={setSelectedDate}
+                    reminders={reminders}
+                    onAddReminder={handleAddReminder}
+                    onDeleteReminder={handleDeleteReminder}
+                    onUpdateReminderStatus={handleUpdateReminderStatus}
+                  />
+                )}
 
-        {selectedView === "reminders" && (
-          <RemindersView reminders={reminders} onDeleteReminder={handleDeleteReminder} onDateClick={handleDateClick} />
-        )}
+                {selectedView === "reminders" && (
+                  <RemindersView
+                    reminders={reminders}
+                    onDeleteReminder={handleDeleteReminder}
+                    onUpdateReminderStatus={handleUpdateReminderStatus}
+                    onDateClick={handleDateClick}
+                  />
+                )}
+              </>
+            }
+          />
+          {/* Las rutas de login y registro siguen igual */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+        </Routes>
       </main>
     </div>
   )
