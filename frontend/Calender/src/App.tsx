@@ -6,7 +6,7 @@ import { YearView } from "@/components/Elementos/year-view"
 import { DayView } from "@/components/Elementos/day-view"
 import { RemindersView } from "@/components/Elementos/reminders-view"
 import { Navbar } from "@/components/Elementos/navbar"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Routes, Route, useNavigate } from "react-router-dom"
 import RegisterPage from "@/components/Elementos/RegisterPage"
 import LoginPage from "@/components/Elementos/LoginPage"
@@ -16,38 +16,56 @@ import { useAuth } from "@/lib/auth"
 type ViewOption = "day" | "month" | "year" | "reminders"
 
 export default function App() {
-  // Obtenemos el estado de autenticación
-  const { isAuthenticated } = useAuth(); 
+  const { isAuthenticated, token } = useAuth(); 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [selectedView, setSelectedView] = useState<ViewOption>("month")
   const [selectedDate, setSelectedDate] = useState(new Date())
-  // El estado de los recordatorios ahora sirve para usuarios invitados y autenticados
   const [reminders, setReminders] = useState<Record<string, Reminder[]>>({})
   const navigate = useNavigate()
+
+  // --- LÓGICA DE CARGA DE DATOS MEJORADA ---
+  // Usamos useCallback para memorizar la función y evitar que se recree innecesariamente.
+  const fetchEvents = useCallback(async () => {
+    if (isAuthenticated && token) {
+      try {
+        const response = await fetch("http://localhost:8000/api/events/", {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (!response.ok) throw new Error("No se pudieron cargar los eventos.");
+        
+        const events = await response.json();
+        
+        const remindersFormatted: Record<string, Reminder[]> = {};
+        for (const event of events) {
+          const dateKey = event.FechaInicio.split('T')[0];
+          if (!remindersFormatted[dateKey]) {
+            remindersFormatted[dateKey] = [];
+          }
+          remindersFormatted[dateKey].push({
+            text: event.Descripcion ? `${event.Titulo}: ${event.Descripcion}` : event.Titulo,
+            status: "PENDIENTE"
+          });
+        }
+        setReminders(remindersFormatted);
+      } catch (error) {
+        console.error("Error al cargar eventos:", error);
+        setReminders({}); // Limpiamos en caso de error para no mostrar datos viejos
+      }
+    } else {
+      setReminders({});
+    }
+  }, [isAuthenticated, token]); // Depende del estado de autenticación y del token
+
+  // useEffect ahora solo llama a fetchEvents cuando cambia la autenticación.
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
+
 
   const handleViewChange = (view: ViewOption) => {
     navigate("/")
     setSelectedView(view)
   }
-
-  // --- EFECTOS CONDICIONALES ---
-  // Cargar recordatorios desde localStorage SOLO si el usuario está autenticado
-  useEffect(() => {
-    if (isAuthenticated) {
-      const savedReminders = localStorage.getItem("calendar-reminders")
-      if (savedReminders) {
-        setReminders(JSON.parse(savedReminders))
-      }
-    }
-    // Si no está autenticado, el estado 'reminders' empieza vacío.
-  }, [isAuthenticated]) // Se ejecuta cuando cambia el estado de autenticación
-
-  // Guardar recordatorios en localStorage SOLO si el usuario está autenticado
-  useEffect(() => {
-    if (isAuthenticated) {
-      localStorage.setItem("calendar-reminders", JSON.stringify(reminders))
-    }
-  }, [reminders, isAuthenticated])
 
   const getDateKey = (date: Date) => {
     const year = date.getFullYear()
@@ -108,7 +126,6 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen">
-      {/* La Navbar y Sidebar ahora se muestran siempre */}
       <Navbar onMenuClick={() => setIsSidebarOpen(true)} />
 
       <CalendarSidebar
@@ -120,7 +137,6 @@ export default function App() {
 
       <main className="flex-1 p-8 pt-24 bg-background">
         <Routes>
-          {/* La ruta principal ya no está protegida, es para todos */}
           <Route
             path="/"
             element={
@@ -148,6 +164,7 @@ export default function App() {
                     selectedDate={selectedDate}
                     onDateChange={setSelectedDate}
                     reminders={reminders}
+                    onEventCreated={fetchEvents} 
                     onAddReminder={handleAddReminder}
                     onDeleteReminder={handleDeleteReminder}
                     onUpdateReminderStatus={handleUpdateReminderStatus}
@@ -165,7 +182,6 @@ export default function App() {
               </>
             }
           />
-          {/* Las rutas de login y registro siguen igual */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
         </Routes>

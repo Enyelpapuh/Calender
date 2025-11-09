@@ -4,9 +4,9 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated # Importamos IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import Recordatorio
+from .models import Evento, Recordatorio
 from .serializers import (
     UserSerializer,
     RegisterSerializer,
@@ -18,10 +18,15 @@ def home(request):
     return HttpResponse("<h1>Servidor Django funcionando correctamente ✅</h1><p>El backend está activo.</p>")
 
 
+# --- VISTA CORREGIDA ---
+@api_view(['GET']) # 1. La convertimos en una vista de API que solo acepta GET
+@permission_classes([IsAuthenticated]) # 2. Exigimos que el usuario esté autenticado
 def reminders_list(request):
+    # 3. Ahora request.user es el usuario correcto, por lo que el filtro funciona
     reminders = Recordatorio.objects.filter(Evento__Usuario=request.user)
     serializer = RecordatorioSerializer(reminders, many=True)
-    return JsonResponse(serializer.data, safe=False)
+    # 4. Usamos la respuesta estándar de DRF
+    return Response(serializer.data)
 
 
 @api_view(['POST'])
@@ -53,6 +58,18 @@ def login(request):
         })
     else:
         return Response({"detail": "No se encontró una cuenta activa con las credenciales proporcionadas"}, status=401)
+
+# --- NUEVA VISTA PARA LISTAR EVENTOS ---
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def event_list(request):
+    """
+    Devuelve una lista de todos los eventos para el usuario autenticado.
+    """
+    events = Evento.objects.filter(Usuario=request.user)
+    serializer = EventoSerializer(events, many=True)
+    return Response(serializer.data)
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])

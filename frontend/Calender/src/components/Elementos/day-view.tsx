@@ -14,6 +14,7 @@ interface DayViewProps {
   selectedDate: Date
   onDateChange: (date: Date) => void
   reminders: Record<string, Reminder[]>
+  onEventCreated: () => void; // Nueva prop
   onAddReminder: (date: Date, reminder: string) => void
   onDeleteReminder: (date: Date, index: number) => void
   onUpdateReminderStatus: (date: Date, index: number, status: ReminderStatus) => void
@@ -28,6 +29,7 @@ export function DayView({
   selectedDate,
   onDateChange,
   reminders,
+  onEventCreated, // La recibimos
   onAddReminder,
   onDeleteReminder,
   onUpdateReminderStatus,
@@ -117,9 +119,8 @@ export function DayView({
               return;
           }
 
-          const newEvent = await response.json();
-          // Usamos onAddReminder para mantener la UI sincronizada
-          onAddReminder(selectedDate, `${newEvent.Titulo}: ${newEvent.Descripcion}`);
+          // 2. En lugar de actualizar localmente, llamamos a la función para recargar todo
+          onEventCreated(); 
           form.reset();
 
       } catch (err) {
