@@ -63,3 +63,5 @@ celerybeat-schedule
 # OS files
 .DS_Store
 
+static
+staticfiles_collected/
