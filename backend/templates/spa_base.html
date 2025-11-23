@@ -1,4 +1,5 @@
-{% load static %} 
+{% load static %}
+{% load vite_tags %}
 <!doctype html>
 <html lang="en">
   <head>
@@ -7,8 +8,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>calender</title>
     
-    <script type="module" crossorigin src="{% static 'dist/assets/index-Ddo1UX_p.js' %}"></script>
-    <link rel="stylesheet" crossorigin href="{% static 'dist/assets/index-anHXX2M8.css' %}">
+    <script type="module" crossorigin src="{% vite_asset_js %}"></script>
+    <link rel="stylesheet" crossorigin href="{% vite_asset_css %}">
   </head>
   <body>
     <div id="root"></div>

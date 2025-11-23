@@ -28,7 +28,7 @@ export default function App() {
   const fetchEvents = useCallback(async () => {
     if (isAuthenticated && token) {
       try {
-        const response = await fetch("http://localhost:8000/api/events/", {
+        const response = await fetch("/api/events/", {
           headers: { "Authorization": `Bearer ${token}` }
         });
         if (!response.ok) throw new Error("No se pudieron cargar los eventos.");

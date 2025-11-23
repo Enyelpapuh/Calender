@@ -104,7 +104,7 @@ export function DayView({
       console.log("Enviando al backend:", JSON.stringify(payload, null, 2)); 
 
       try {
-          const response = await fetch("http://localhost:8000/api/events/create/", {
+          const response = await fetch("/api/events/create/", {
               method: "POST",
               headers: {
                   "Content-Type": "application/json",

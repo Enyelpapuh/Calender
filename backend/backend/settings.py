@@ -14,7 +14,7 @@ FRONTEND_DIR = BASE_DIR.parent / 'frontend' / 'Calender'
 # Ruta donde Vite genera los archivos (el path a la carpeta 'dist')
 VITE_BUILD_DIR = BASE_DIR / 'static' / 'dist' # Conservamos por claridad lógica
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 
 # Directorio de recolección de estáticos para producción (Apache)
 STATIC_ROOT = BASE_DIR / 'staticfiles_collected'
@@ -22,7 +22,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles_collected'
 # Directorios donde Django buscará archivos estáticos (incluyendo Vite)
 STATICFILES_DIRS = [
     BASE_DIR / "static",
-    "/var/www/static/",
+#    "/var/www/static/",
 ]
 
 #
