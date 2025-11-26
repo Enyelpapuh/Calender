@@ -1,130 +1,194 @@
-# Calender
+¡Claro\! Aquí tienes el archivo completo en formato **Markdown**, listo para usar como tu `README.md`. Incluye la guía de pre-requisitos, el desarrollo y la configuración completa para el despliegue en Apache.
 
-Guía rápida para levantar el proyecto (backend Django + frontend Vite/React).
+-----
 
-Resumen de pasos
-1. Crear entorno virtual Python e instalar dependencias backend
-2. Instalar dependencias frontend y generar build
-3. Ejecutar `manage.py migrate` y `collectstatic`
-4. Levantar servidor de desarrollo Django o producción
+````markdown
+# Calender - Guía Completa de Instalación y Despliegue
 
-Instrucciones detalladas
+Este proyecto utiliza una arquitectura **Django** (backend) con **Vite/React** (frontend).
 
--- Windows (PowerShell) --
+---
 
-# Clonar repo (si aún no lo hiciste)
+## 1. Pre-requisitos (Instalación Inicial)
+
+Asegúrate de que **Python 3** y **Node.js** estén instalados en tu sistema.
+
+### Linux / macOS (Bash)
+
+```bash
+# 1. Verificar Python 3
+python3 --version
+
+# 2. Instalar Node.js y npm (Para sistemas basados en Debian/Ubuntu)
+sudo apt update
+sudo apt install nodejs npm
+````
+
+-----
+
+## 2\.  Desarrollo y Compilación (Build del Proyecto)
+
+Esta sección cubre la clonación, la instalación de dependencias y la generación de archivos estáticos.
+
+### Guía Rápida para Linux / macOS (Bash)
+
+```bash
+# 1. Clonar el repositorio
 git clone <repo-url>
 cd Calender
 
-# 1) Crear y activar virtualenv (en la carpeta `backend` usamos `.venv`)
-cd backend
-python -m venv .venv
-; .\.venv\Scripts\Activate.ps1
-
-
-# Actualizar pip e instalar dependencias Python
-python -m pip install --upgrade pip
-pip install -r requieriments.txt
-
-# 2) Instalar dependencias frontend y generar build (en otra shell)
-cd ..\frontend\Calender
-npm install
-npm run build
-
-# 3) Volver al backend, migrar y recolectar estáticos
-cd ..\..\backend
-python manage.py migrate
-python manage.py collectstatic --noinput
-
-# 4) Ejecutar servidor de desarrollo
-python manage.py runserver
-
-# Acceder en el navegador
-Abre http://127.0.0.1:8000/
-
-Notas específicas para PowerShell
-- Si PowerShell bloquea la activación del virtualenv por política de ejecución, ejecuta (como administrador):
-  Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-
--- Linux / macOS (Bash) --
-
-# Clonar repo y moverse al proyecto
-git clone <repo-url>
-cd Calender
-
-# 1) Crear y activar virtualenv
+# 2. Configurar Backend (Python/Django)
 cd backend
 python3 -m venv .venv
 source .venv/bin/activate
-
-# Actualizar pip e instalar dependencias
 python -m pip install --upgrade pip
 pip install -r requieriments.txt
 
-# 2) Instalar dependencias frontend y generar build (en otra terminal/tab)
+# 3. Configurar Frontend (Node/React/Vite)
 cd ../frontend/Calender
 npm install
-npm run build
+npm run build # Genera la compilación de React
 
-# 3) Volver al backend, migrar y recolectar estáticos
+# 4. Finalizar Backend y Ejecutar Servidor de Desarrollo
 cd ../../backend
 python manage.py migrate
 python manage.py collectstatic --noinput
 
-# 4) Ejecutar servidor de desarrollo
-python manage.py runserver 0.0.0.0:8000
+# Ejecutar servidor de desarrollo
+python manage.py runserver 0.0.0.0:8000 
+# Accede en el navegador: [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
+```
 
-Producción (recomendado)
-- Usar un servidor WSGI (Gunicorn/uWSGI) + Nginx para servir estáticos, o configurar WhiteNoise.
-
-Ejemplo mínimo con Gunicorn + WhiteNoise
-1. Instalar dependencias de producción:
-	pip install gunicorn whitenoise
-2. En `backend/backend/settings.py` añadir en `MIDDLEWARE` (después de SecurityMiddleware):
-	'whitenoise.middleware.WhiteNoiseMiddleware',
-	y establecer `STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'`
-3. Ejecutar collectstatic:
-	python manage.py collectstatic --noinput
-4. Ejecutar gunicorn (desde la carpeta `backend`):
-	gunicorn backend.wsgi:application --bind 0.0.0.0:8000 --workers 3
-
-Consejos y resolución de problemas
-- Asegúrate de que `STATIC_URL` en `backend/backend/settings.py` empieza con `/static/`.
-- Si los archivos del frontend tienen hashes y la plantilla apunta a nombres antiguos, usa el `index.html` del build en `static/dist/index.html` o configura las plantillas para resolver dinámicamente los archivos (ya hay utilidades en el proyecto para esto).
-- Si ves 404 para `/static/...`, revisa que `python manage.py collectstatic` copie los archivos en `STATIC_ROOT` (por defecto `backend/staticfiles_collected/`).
-- Para desarrollo con HMR, puedes ejecutar el dev server de Vite en `frontend/Calender` con `npm run dev` y configurar Django para hacer proxy o apuntar las peticiones a `http://localhost:5173`.
-
-Comandos útiles (resumen)
-PowerShell (Windows):
+### Guía Rápida para Windows (PowerShell)
 
 ```powershell
+# 1. Clonar el repositorio
+git clone <repo-url>
+cd Calender
+
+# 2. Configurar Backend (Python/Django)
 cd backend
 python -m venv .venv
- .\.venv\Scripts\Activate.ps1
+.\.venv\Scripts\Activate.ps1
 pip install -r requieriments.txt
+
+# 3. Configurar Frontend (Node/React/Vite)
 cd ..\frontend\Calender
 npm install
 npm run build
+
+# 4. Finalizar Backend y Ejecutar Servidor de Desarrollo
 cd ..\..\backend
 python manage.py migrate
 python manage.py collectstatic --noinput
 python manage.py runserver
 ```
 
-Linux/macOS (Bash):
+-----
+
+## 3\. ⚙️ Despliegue en Producción (Apache y WSGI)
+
+Para el despliegue en Linux, se utiliza **Apache** con **mod\_wsgi**. **Ajusta la ruta `/home/ubuntu/Desktop/Calender` a la ruta real de tu proyecto.**
+
+### A. Instalación de WSGI y Permisos
+
 ```bash
-cd backend
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requieriments.txt
-cd ../frontend/Calender
-npm install
-npm run build
-cd ../../backend
-python manage.py migrate
-python manage.py collectstatic --noinput
-python manage.py runserver 0.0.0.0:8000
+# Instalar mod_wsgi y dependencias de producción de Python
+sudo apt update
+sudo apt install libapache2-mod-wsgi-py3
+pip install gunicorn whitenoise
+sudo a2enmod wsgi
+
+# Dar permisos al usuario de Apache (www-data) sobre la carpeta del proyecto
+sudo chown -R www-data:www-data /home/ubuntu/Desktop/Calender
+sudo chmod -R 755 /home/ubuntu/Desktop/Calender
 ```
 
-Contacto
-Si algo falla, copia los errores de la terminal y las rutas exactas (por ejemplo el 404 en DevTools) y ábrelos en una nueva issue o contáctame.
+### B. Configuración del Virtual Host (`calender.conf`)
+
+Crea y edita el archivo de configuración del Virtual Host:
+
+```bash
+sudo nano /etc/apache2/sites-available/calender.conf
+```
+
+**Contenido de `calender.conf` (con rutas de ejemplo):**
+
+```apache
+<VirtualHost *:8080>
+
+    # 1. Información Básica
+    ServerName 3.135.51.128 
+    ServerAdmin webmaster@localhost
+
+    # 2. Configuración de Archivos Estáticos (Vite/React Build)
+    Alias /static/ /home/ubuntu/Desktop/Calender/backend/staticfiles_collected/
+
+    <Directory /home/ubuntu/Desktop/Calender/backend/staticfiles_collected/>
+        Require all granted
+        Options FollowSymLinks
+    </Directory>
+
+    # 3. Configuración del Entorno Virtual (WSGIDaemonProcess)
+    # **IMPORTANTE:** Verifica la versión de Python en la ruta (.venv/lib/python3.12/)
+    WSGIDaemonProcess calender python-path=/home/ubuntu/Desktop/Calender/backend:/home/ubuntu/Desktop/Calender/backend/.venv/lib/python3.12/site-packages
+
+    WSGIProcessGroup calender
+    WSGIScriptAlias / /home/ubuntu/Desktop/Calender/backend/backend/wsgi.py
+
+    # 4. Directorio de WSGI y Permisos
+    <Directory /home/ubuntu/Desktop/Calender/backend/backend/>
+        <Files wsgi.py>
+            Require all granted
+        </Files>
+        Options FollowSymLinks
+        AllowOverride None
+    </Directory>
+
+    # 5. Permisos del Directorio Raíz del Proyecto
+    <Directory /home/ubuntu/Desktop/Calender/backend>
+        Require all granted
+    </Directory>
+
+    # 6. Logs
+    ErrorLog ${APACHE_LOG_DIR}/calender_error.log
+    CustomLog ${APACHE_LOG_DIR}/calender_access.log combined
+
+</VirtualHost>
+```
+
+### C. Modificación de Configuración Global (`apache2.conf`)
+
+Edita el archivo de configuración principal de Apache para asegurar los permisos de acceso al directorio de tu proyecto.
+
+```bash
+sudo nano /etc/apache2/apache2.conf
+```
+
+Añade o ajusta el siguiente bloque dentro de `apache2.conf`:
+
+```apache
+# ... contenido preexistente ...
+
+# Permite que Apache acceda al directorio de la aplicación
+<Directory /home/ubuntu/Desktop/Calender/backend>
+    Options Indexes FollowSymLinks
+    AllowOverride None
+    Require all granted
+</Directory>
+
+# ... contenido preexistente ...
+```
+
+### D. Activación y Reinicio
+
+```bash
+# Habilitar el Virtual Host
+sudo a2ensite calender.conf
+
+# Reiniciar Apache para aplicar las configuraciones
+sudo systemctl restart apache2
+```
+
+```
+```
